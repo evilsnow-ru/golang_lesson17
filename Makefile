@@ -3,5 +3,7 @@
 gen:
 	go generate
 
-all: gen
+build:
 	go build .
+
+all: gen build
