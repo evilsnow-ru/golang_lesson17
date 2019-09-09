@@ -1,13 +1,7 @@
-.PHONY: vet test gen build
-
-vet:
-	go vet .
-
-test:
-	go test .
+.PHONY: all
 
 gen:
-	protoc --go_out=. messages.proto
+	go generate
 
-build: vet test
-	go build -o distr/otuslesson17 .
+all: gen
+	go build .

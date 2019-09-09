@@ -1,13 +1,18 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 package lesson17;
 option go_package="lesson17";
 
 enum EventType {
-    
+    UNDEFINED = 0;
+    MEETING = 1;
+    NOTIFICATION = 2;
 }
 
 message Event {
     string description = 1;
-
+    EventType type = 2;
+    google.protobuf.Timestamp date = 3;
 }
