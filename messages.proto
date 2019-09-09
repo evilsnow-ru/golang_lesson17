@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package lesson17;
+option go_package="lesson17";
+
+enum EventType {
+    
+}
+
+message Event {
+    string description = 1;
+
+}
