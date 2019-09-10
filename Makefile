@@ -1,9 +1,13 @@
-.PHONY: all
+.PHONY: all gen vet build
+
+all: build
 
 gen:
-	go generate
+	go generate .
 
-build:
+vet:
+	go vet .
+	golint .
+
+build: vet
 	go build .
-
-all: gen build
