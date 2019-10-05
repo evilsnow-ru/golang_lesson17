@@ -3,11 +3,17 @@
 all: build
 
 gen:
-	go generate .
+	protoc -I/usr/local/include/ -I./api/ --go_out=./api/ messages.proto
 
 vet:
 	go vet .
 	golint .
 
-build: vet
+fmtchk:
+	gofmt -l .
+
+fmt:
+	gofmt -w .
+
+build: vet fmtchk
 	go build .

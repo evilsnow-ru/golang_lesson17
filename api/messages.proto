@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package lesson17;
+option go_package="api";
+
+enum EventType {
+    UNDEFINED = 0;
+    MEETING = 1;
+    NOTIFICATION = 2;
+}
+
+message Event {
+    uint64 msgId = 1;
+    string description = 2;
+    EventType type = 3;
+    google.protobuf.Timestamp date = 4;
+}
