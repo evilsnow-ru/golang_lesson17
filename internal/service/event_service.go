@@ -4,50 +4,23 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"golang_lesson17/api"
+	"golang_lesson17/internal/domain/dao"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
-	"sync"
-	"sync/atomic"
 )
 
-var storage = make(map[uint64]*api.Event)
-var lock sync.RWMutex
-var index uint64
+var storage dao.Storage
 
-func addEvent(event *api.Event) uint64 {
-	id := atomic.AddUint64(&index, 1)
-	lock.Lock()
-	storage[id] = event
-	lock.Unlock()
-	return id
-}
+func init() {
+	var err error
+	storage, err = dao.DefaultStorage()
 
-func updateEvent(id uint64, event *api.Event) bool {
-	lock.Lock()
-	_, ok := storage[id]
-	if ok {
-		storage[id] = event
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
-	lock.Unlock()
-	return ok
-}
-
-func deleteEvent(id uint64) {
-	lock.Lock()
-	delete(storage, id)
-	lock.Unlock()
-}
-
-func getEvent(id uint64) *api.Event {
-	lock.RLock()
-	event, ok := storage[id]
-	lock.RUnlock()
-
-	if ok {
-		return event
-	}
-	return nil
 }
 
 func addEventHandler(responseWriter http.ResponseWriter, request *http.Request) {
@@ -72,7 +45,20 @@ func addEventHandler(responseWriter http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	id := addEvent(event)
+	eventEntity, err := api.Convert(event)
+
+	if err != nil {
+		http.Error(responseWriter, "Error processing request", http.StatusInternalServerError)
+		return
+	}
+
+	id, err := storage.Store(eventEntity)
+
+	if err != nil {
+		http.Error(responseWriter, "Error processing request", http.StatusInternalServerError)
+		return
+	}
+
 	responseWriter.WriteHeader(http.StatusOK)
 	responseWriter.Write([]byte(fmt.Sprintf("id: %d", id)))
 }
@@ -92,7 +78,12 @@ func getEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := getEvent(id)
+	event, err := storage.Get(id)
+
+	if err != nil {
+		http.Error(w, "Error processing request", http.StatusInternalServerError)
+		return
+	}
 
 	if event == nil {
 		http.NotFound(w, r)
@@ -100,7 +91,7 @@ func getEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	typeName := api.EventType_name[int32(event.Type)]
-	result := fmt.Sprintf("Event {id=%d, type=\"%s\", date=\"%s\", msg=\"%s\"}", event.MsgId, typeName, event.Date, event.Description)
+	result := fmt.Sprintf("Event {id=%d, type=\"%s\", date=\"%s\", msg=\"%s\"}", event.Id, typeName, event.Date, event.Description)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(result))
 }
